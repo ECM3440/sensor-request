@@ -35,6 +35,9 @@ jobs:
   run-tests:
     name: Run tests
     runs-on: ubuntu-latest
+    env:
+      COVERAGE_SINGLE: 60
+      COVERAGE_TOTAL: 60
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -45,24 +48,49 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Test with pytest
+
+      - name: pytester-cov
+        id: pytester-cov
+        uses: programmingwithalex/pytester-cov@main
+        with:
+          pytest-root-dir: "."
+          cov-omit-list: ".github/*"
+          cov-threshold-single: ${{ env.COVERAGE_SINGLE }}
+          cov-threshold-total: ${{ env.COVERAGE_TOTAL }}
+
+      - name: Coverage single fail - new issue
+        if: ${{ steps.pytester-cov.outputs.cov-threshold-single-fail == 'true' }}
+        uses: nashmaniac/create-issue-action@v1.1
+        with:
+          title: Pytest coverage single falls below minimum ${{ env.COVERAGE_SINGLE }}
+          token: ${{secrets.GITHUB_TOKEN}}
+          assignees: ${{github.actor}}
+          labels: workflow-failed
+          body: ${{ steps.pytester-cov.outputs.output-table }}
+
+      - name: Coverage single fail - exit
+        if: ${{ steps.pytester-cov.outputs.cov-threshold-single-fail == 'true' }}
         run: |
-          pip install pytest
-          pip install pytest-cov
-          pip install mock
-          pip install pytest-httpserver
-          python -m pytest --junitxml=test-results-${{ github.sha }}.xml --exitfirst --verbose --failed-first --cov=. --cov-report xml tests/ | tee pytest-coverage.txt
+          echo "cov single fail ${{ steps.pytester-cov.outputs.cov-threshold-single-fail }}"
+          exit 1
 
-      - name: Upload pytest test results
-        uses: actions/upload-artifact@v3
+      - name: Coverage total fail - new issue
+        if: ${{ steps.pytester-cov.outputs.cov-threshold-total-fail == 'true' }}
+        uses: nashmaniac/create-issue-action@v1.1
         with:
-          name: pytest-results-${{ github.sha }}
-          path: test-results-${{ github.sha }}.xml
-        # Use always() to always run this step to publish test results when there are test failures
-        if: ${{ always() }}
+          title: Pytest coverage total falls below minimum ${{ env.COVERAGE_TOTAL }}
+          token: ${{secrets.GITHUB_TOKEN}}
+          assignees: ${{github.actor}}
+          labels: workflow-failed
+          body: ${{ steps.pytester-cov.outputs.output-table }}
 
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
+      - name: Coverage total fail - exit
+        if: ${{ steps.pytester-cov.outputs.cov-threshold-total-fail == 'true' }}
+        run: |
+          echo "cov single fail ${{ steps.pytester-cov.outputs.cov-threshold-total-fail }}"
+          exit 1
+
+      - name: Commit pytest coverage table
+        uses: peter-evans/commit-comment@main
         with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./test-results-${{ github.sha }}.xml
+          body: ${{ steps.pytester-cov.outputs.output-table }}
