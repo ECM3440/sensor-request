@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import mock
 import pytest
 from pytest_httpserver import HTTPServer
-from src.main.azure_iot.azure_iot_hub import IoTHubClient
+from ...main.azure_iot.azure_iot_hub import IoTHubClient
 
 
 @pytest.fixture(scope="session")
