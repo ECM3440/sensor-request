@@ -54,7 +54,7 @@ jobs:
         uses: programmingwithalex/pytester-cov@main
         with:
           pytest-root-dir: "."
-          cov-omit-list: ".github/*"
+          cov-omit-list: ".github/* src/test/*"
           cov-threshold-single: ${{ env.COVERAGE_SINGLE }}
           cov-threshold-total: ${{ env.COVERAGE_TOTAL }}
 
