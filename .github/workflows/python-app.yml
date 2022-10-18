@@ -1,4 +1,4 @@
-name: Lint
+name: Lint and Test
 
 on:
   # Trigger the workflow on push or pull request,
@@ -53,8 +53,8 @@ jobs:
         id: pytester-cov
         uses: programmingwithalex/pytester-cov@main
         with:
-          pytest-root-dir: "."
-          cov-omit-list: ".github/* src/test/*"
+          pytest-root-dir: "./src/main"
+          cov-omit-list: ".github/* ./src/test/*"
           cov-threshold-single: ${{ env.COVERAGE_SINGLE }}
           cov-threshold-total: ${{ env.COVERAGE_TOTAL }}
 
